@@ -157,11 +157,11 @@ if not st.session_state.authenticated:
     
     with st.form("visitor_form"):
         visitor_name = st.text_input("Name", placeholder="Enter your full name")
-        visitor_purpose = st.selectbox("Purpose of Visit", ["Student", "Teacher", "Exploring", "Other"])
+        visitor_purpose = st.selectbox("Purpose of Visit", ["Select an option...", "Student", "Teacher", "Exploring", "Other"])
         
         submitted = st.form_submit_button("Enter")
         if submitted:
-            if visitor_name.strip() and visitor_purpose.strip():
+            if visitor_name.strip() and visitor_purpose != "Select an option...":
                 log_visitor(visitor_name, visitor_purpose)
                 st.session_state.authenticated = True
                 st.rerun()
