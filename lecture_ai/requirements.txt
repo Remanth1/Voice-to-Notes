@@ -1,6 +1,0 @@
-streamlit
-openai-whisper
-transformers
-torch
-pydub
-python-multipart
