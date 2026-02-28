@@ -13,6 +13,7 @@ A minimalist, AI-powered study buddy that automatically converts your lecture au
 - **Blazing Fast Transcription**: Uses Hugging Face's `distil-whisper` to accurately and quickly convert spoken lectures into raw text, chunking large files to prevent memory overload.
 - **Intelligent Summarization**: Uses Facebook's `BART-large-cnn` model to condense pages of transcript into structured, readable notes.
 - **Auto-Generated Flashcards**: Automatically extracts key concepts from the summary to generate Q&A flashcards using Google's `FLAN-T5` model.
+- **Visitor Authentication & Logging**: Features a built-in pre-app gateway that captures visitor names and purposes into a local `visitors.db` SQLite database before granting access to the study tools.
 - **Minimalist Interface**: Features a custom, distraction-free UI with subtle 2D geometric patterns.
 - **100% Free & Local**: Runs entirely locally on your machine using open-source models. No API keys or paid subscriptions required.
 
