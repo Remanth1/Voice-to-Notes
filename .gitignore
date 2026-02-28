@@ -1,0 +1,9 @@
+venv/
+.env
+__pycache__/
+*.wav
+*.mp3
+*.m4a
+*.flac
+tmp/
+.vscode/
