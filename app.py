@@ -22,10 +22,10 @@ st.markdown("""
     
     /* 2D Background Pattern and Shapes */
     .stApp {
-        background-color: #fcfcfc;
+        background-color: #f8fafc;
         background-image: 
-            radial-gradient(#e5e7eb 1.5px, transparent 1.5px),
-            radial-gradient(#e5e7eb 1.5px, transparent 1.5px);
+            radial-gradient(#94a3b8 1.8px, transparent 1.8px),
+            radial-gradient(#94a3b8 1.8px, transparent 1.8px);
         background-size: 40px 40px;
         background-position: 0 0, 20px 20px;
         z-index: 0;
@@ -39,9 +39,9 @@ st.markdown("""
         width: 45vw;
         height: 45vw;
         border-radius: 50%;
-        background-color: #f1f5f9;
+        background-color: #cbd5e1;
         z-index: -1;
-        opacity: 0.6;
+        opacity: 0.35;
     }
     
     .stApp::after {
@@ -51,10 +51,10 @@ st.markdown("""
         right: -5vw;
         width: 30vw;
         height: 30vw;
-        border: 3px solid #e2e8f0;
+        border: 4px solid #94a3b8;
         transform: rotate(45deg);
         z-index: -1;
-        opacity: 0.5;
+        opacity: 0.35;
     }
     
     /* Typography & Spacing */
