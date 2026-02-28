@@ -2,8 +2,10 @@ import streamlit as st
 import os
 import tempfile
 import imageio_ffmpeg
+import sqlite3
+import datetime
 
-# Automatically add the imageio-ffmpeg binaries folder to the PATH so Whisper can access ffmpeg.exe
+# Automatically add the imageio-ffmpeg binaries folder to the PATH
 os.environ["PATH"] += os.pathsep + os.path.dirname(imageio_ffmpeg.get_ffmpeg_exe())
 
 from transcriber import transcribe_audio
@@ -11,6 +13,37 @@ from summarizer import summarize_text
 from quiz_generator import generate_quiz_and_flashcards
 
 st.set_page_config(page_title="Lecture Notes", layout="centered", initial_sidebar_state="collapsed")
+
+# --- Database Setup ---
+DB_FILE = "visitors.db"
+
+def init_db():
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS visitor_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            purpose TEXT NOT NULL,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+def log_visitor(name, purpose):
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+    c.execute("INSERT INTO visitor_log (name, purpose) VALUES (?, ?)", (name, purpose))
+    conn.commit()
+    conn.close()
+
+# Initialize Database on boot
+init_db()
+
+# --- Session State for Authentication Gateway ---
+if "authenticated" not in st.session_state:
+    st.session_state.authenticated = False
 
 # Injecting Custom CSS for Minimalism
 st.markdown("""
@@ -118,57 +151,74 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown("<h1>voice to notes.</h1>", unsafe_allow_html=True)
-st.markdown("<div class='subtitle'>Upload your lecture audio to generate minimalist transcripts, functional summaries, and study materials.</div>", unsafe_allow_html=True)
+if not st.session_state.authenticated:
+    st.markdown("<h1>welcome to notes.</h1>", unsafe_allow_html=True)
+    st.markdown("<div class='subtitle'>Please enter your details to access the AI study tools.</div>", unsafe_allow_html=True)
+    
+    with st.form("visitor_form"):
+        visitor_name = st.text_input("Name", placeholder="Enter your full name")
+        visitor_purpose = st.text_input("Purpose of Visit", placeholder="E.g., Student, Teacher, Exploring")
+        
+        submitted = st.form_submit_button("Enter")
+        if submitted:
+            if visitor_name.strip() and visitor_purpose.strip():
+                log_visitor(visitor_name, visitor_purpose)
+                st.session_state.authenticated = True
+                st.rerun()
+            else:
+                st.error("Please fill out both your name and purpose to continue.")
+else:
+    st.markdown("<h1>voice to notes.</h1>", unsafe_allow_html=True)
+    st.markdown("<div class='subtitle'>Upload your lecture audio to generate minimalist transcripts, functional summaries, and study materials.</div>", unsafe_allow_html=True)
 
-st.write("---")
+    st.write("---")
 
-uploaded_file = st.file_uploader("Select an audio file", type=['mp3', 'wav', 'm4a'], label_visibility="collapsed")
+    uploaded_file = st.file_uploader("Select an audio file", type=['mp3', 'wav', 'm4a'], label_visibility="collapsed")
 
-if uploaded_file is not None:
-    st.write("") # Spacer
-    if st.button("Process Audio"):
-        # Save uploaded file to temp file to pass to Whisper
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as tmp_file:
-            tmp_file.write(uploaded_file.getvalue())
-            tmp_file_path = tmp_file.name
+    if uploaded_file is not None:
+        st.write("") # Spacer
+        if st.button("Process Audio"):
+            # Save uploaded file to temp file to pass to Whisper
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as tmp_file:
+                tmp_file.write(uploaded_file.getvalue())
+                tmp_file_path = tmp_file.name
 
-        try:
-            # 1. Transcription
-            with st.spinner("Transcribing audio..."):
-                transcript = transcribe_audio(tmp_file_path)
+            try:
+                # 1. Transcription
+                with st.spinner("Transcribing audio..."):
+                    transcript = transcribe_audio(tmp_file_path)
 
-            # 2. Summarization
-            with st.spinner("Summarizing text..."):
-                summary = summarize_text(transcript)
+                # 2. Summarization
+                with st.spinner("Summarizing text..."):
+                    summary = summarize_text(transcript)
 
-            # 3. Quiz & Flashcards
-            with st.spinner("Generating study materials..."):
-                qa_data = generate_quiz_and_flashcards(summary)
+                # 3. Quiz & Flashcards
+                with st.spinner("Generating study materials..."):
+                    qa_data = generate_quiz_and_flashcards(summary)
 
-            st.write("---")
-            
-            # Display Results in Minimalist Tabs
-            tab1, tab2, tab3 = st.tabs(["Transcript", "Summary", "Flashcards"])
-            
-            with tab1:
-                st.write(transcript)
-                st.download_button("Download Transcript", transcript, file_name="transcript.txt", key="dl_transcript")
+                st.write("---")
                 
-            with tab2:
-                st.write(summary)
-                st.download_button("Download Summary", summary, file_name="notes.txt", key="dl_summary")
+                # Display Results in Minimalist Tabs
+                tab1, tab2, tab3 = st.tabs(["Transcript", "Summary", "Flashcards"])
                 
-            with tab3:
-                st.write(qa_data)
-                st.download_button("Download Flashcards", qa_data, file_name="flashcards.txt", key="dl_flashcards")
-                
-        except Exception as e:
-            st.error(f"An error occurred: {e}")
-        finally:
-            # Cleanup temp file
-            if os.path.exists(tmp_file_path):
-                try:
-                    os.unlink(tmp_file_path)
-                except:
-                    pass
+                with tab1:
+                    st.write(transcript)
+                    st.download_button("Download Transcript", transcript, file_name="transcript.txt", key="dl_transcript")
+                    
+                with tab2:
+                    st.write(summary)
+                    st.download_button("Download Summary", summary, file_name="notes.txt", key="dl_summary")
+                    
+                with tab3:
+                    st.write(qa_data)
+                    st.download_button("Download Flashcards", qa_data, file_name="flashcards.txt", key="dl_flashcards")
+                    
+            except Exception as e:
+                st.error(f"An error occurred: {e}")
+            finally:
+                # Cleanup temp file
+                if os.path.exists(tmp_file_path):
+                    try:
+                        os.unlink(tmp_file_path)
+                    except:
+                        pass
